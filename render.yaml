@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: sunthru-inventory
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SHEET_ID
+        value: 1rQDVBLL6aBYw-Jhv8J-s8OHi4zNBqF5Lc2o_j-bhbuA
+      - key: DRIVE_FOLDER_ID
+        value: 1s8IQiiYBMKD5vqFNq5du4NR_o--nNT89
+      - key: CREDENTIALS_PATH
+        value: /etc/secrets/credentials.json

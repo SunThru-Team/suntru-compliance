@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Add Item — SunThru</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:   #1F5C99;
+      --text:   #1A2333;
+      --sub:    #6B7585;
+      --bg:     #F2F4F8;
+      --card:   #FFFFFF;
+      --border: #E4E8EF;
+      --red:    #EF4444;
+      --green:  #10B981;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Top bar ── */
+    .top {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: var(--blue);
+      padding: env(safe-area-inset-top, 0) 0 0;
+    }
+    .top-inner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+    }
+    .back-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 4px;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .back-btn:active { background: rgba(255,255,255,0.15); }
+    .top-inner h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      flex: 1;
+    }
+    .tab-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.7);
+      background: rgba(255,255,255,0.15);
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    /* ── Scroll body ── */
+    .body {
+      padding-top: calc(58px + env(safe-area-inset-top, 0px));
+      padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* ── Form sections ── */
+    .section {
+      margin: 16px 0 0;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .section-header {
+      padding: 10px 16px 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--sub);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .field-row {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      min-height: 50px;
+    }
+    .field-row:last-child { border-bottom: none; }
+
+    .field-label {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+      flex: 0 0 130px;
+      padding-right: 8px;
+    }
+    .field-label.required::after {
+      content: " *";
+      color: var(--red);
+    }
+
+    /* Suggested ID chip */
+    .id-suggest-row {
+      display: flex;
+      align-items: center;
+      padding: 0 16px 12px;
+      gap: 8px;
+    }
+    .id-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #EBF2FB;
+      color: var(--blue);
+      border: 1.5px solid #BDD4ED;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: -0.2px;
+      transition: background 0.12s;
+    }
+    .id-chip:active { background: #D4E7F8; }
+    .id-chip-label {
+      font-size: 12px;
+      color: var(--sub);
+      font-weight: 500;
+    }
+
+    .field-row input[type="text"],
+    .field-row input[type="number"],
+    .field-row select,
+    .field-row textarea {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 15px;
+      color: var(--text);
+      background: transparent;
+      padding: 14px 0;
+      font-family: inherit;
+    }
+    .field-row select { cursor: pointer; }
+    .field-row input::placeholder,
+    .field-row textarea::placeholder { color: #C0C5CE; }
+
+    .field-row textarea {
+      resize: none;
+      min-height: 80px;
+      padding: 14px 0;
+      line-height: 1.4;
+    }
+
+    /* Reorder computed display */
+    .reorder-preview {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 14px 0;
+    }
+    .reorder-yes { color: var(--red); }
+    .reorder-no  { color: var(--green); }
+    .reorder-na  { color: var(--sub); }
+
+    /* ── Submit button ── */
+    .submit-wrap {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      padding: 12px 16px env(safe-area-inset-bottom, 12px);
+      background: var(--card);
+      border-top: 1px solid var(--border);
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: -0.2px;
+      transition: opacity 0.15s;
+    }
+    .submit-btn:disabled { opacity: 0.5; cursor: default; }
+    .submit-btn:not(:disabled):active { opacity: 0.8; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%; transform: translateX(-50%);
+      background: #1A2333;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+      white-space: nowrap;
+      z-index: 200;
+    }
+    #toast.show { opacity: 1; }
+    #toast.error { background: var(--red); }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div class="top">
+    <div class="top-inner">
+      <button class="back-btn" onclick="history.back()" aria-label="Back">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <h1>Add Item</h1>
+      <span class="tab-label">{{ tab_meta[active_tab].display_name if active_tab in tab_meta else active_tab }}</span>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- Identity -->
+    <div class="section-header">Identity</div>
+    <div class="section">
+      {% if 'part_id' in col_map %}
+      <div class="field-row">
+        <label class="field-label required" for="f_part_id">Part ID</label>
+        <input type="text" id="f_part_id" name="part_id"
+               value="{{ next_part_id }}"
+               placeholder="e.g. E1000"
+               autocomplete="off" autocorrect="off" autocapitalize="characters" />
+      </div>
+      {% if next_part_id %}
+      <div class="id-suggest-row">
+        <span class="id-chip-label">Next available:</span>
+        <button type="button" class="id-chip" onclick="useNextId()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+          {{ next_part_id }}
+        </button>
+      </div>
+      {% endif %}
+      {% endif %}
+      {% if 'part_name' in col_map %}
+      <div class="field-row">
+        <label class="field-label" for="f_part_name">Part Name</label>
+        <input type="text" id="f_part_name" name="part_name" placeholder="Description" autocomplete="off" autocorrect="off" />
+      </div>
+      {% endif %}
+      {% if 'category' in col_map %}
+      <div class="field-row">
+        <label class="field-label" for="f_category">Category</label>
+        <input type="text" id="f_category" name="category" placeholder="e.g. Electrical" autocomplete="off" autocorrect="off" />
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Location -->
+    {% if 'location_code' in col_map or 'zone' in col_map %}
+    <div class="section-header">Location</div>
+    <div class="section">
+      {% if 'location_code' in col_map %}
+      <div class="field-row">
+        <label class="field-label" for="f_location_code">Location Code</label>
+        <select id="f_location_code" name="location_code">
+          <option value="">— select —</option>
+          {% for lc in location_codes %}
+          <option value="{{ lc }}">{{ lc }}</option>
+          {% endfor %}
+          <option value="__other__">Other…</option>
+        </select>
+      </div>
+      <div class="field-row" id="loc-other-row" style="display:none">
+        <label class="field-label" for="f_location_other">Custom Code</label>
+        <input type="text" id="f_location_other" placeholder="Type code" autocomplete="off" />
+      </div>
+      {% endif %}
+      {% if 'zone' in col_map %}
+      <div class="field-row">
+        <label class="field-label" for="f_zone">Zone</label>
+        <input type="text" id="f_zone" name="zone" placeholder="e.g. Z1" autocomplete="off" autocorrect="off" autocapitalize="characters" />
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Stock -->
+    {% if 'qty' in col_map or 'condition' in col_map or 'reorder_thresh' in col_map %}
+    <div class="section-header">Stock</div>
+    <div class="section">
+      {% if 'qty' in col_map %}
+      <div class="field-row">
+        <label class="field-label" for="f_qty">Qty on Hand</label>
+        <input type="number" id="f_qty" name="qty" placeholder="0" min="0" step="1" oninput="updateReorder()" />
+      </div>
+      {% endif %}
+      {% if 'reorder_thresh' in col_map %}
+      <div class="field-row">
+        <label class="field-label" for="f_reorder_thresh">Reorder Threshold</label>
+        <input type="number" id="f_reorder_thresh" name="reorder_thresh" placeholder="0" min="0" step="1" oninput="updateReorder()" />
+      </div>
+      {% endif %}
+      {% if 'reorder_flag' in col_map %}
+      <div class="field-row">
+        <span class="field-label">Reorder Flag</span>
+        <span class="reorder-preview reorder-na" id="reorder-preview">N/A</span>
+      </div>
+      {% endif %}
+      {% if 'condition' in col_map %}
+      <div class="field-row">
+        <label class="field-label" for="f_condition">Condition</label>
+        <select id="f_condition" name="condition">
+          <option value="">— select —</option>
+          <option>Good</option>
+          <option>Fair</option>
+          <option>Needs Repair</option>
+          <option>N/A</option>
+        </select>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Submit -->
+  <div class="submit-wrap">
+    <button class="submit-btn" id="submit-btn" onclick="submitItem()">Add Item</button>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    const TAB         = {{ active_tab | tojson }};
+    const NEXT_PART_ID = {{ next_part_id | tojson }};
+
+    function useNextId() {
+      const el = document.getElementById("f_part_id");
+      if (el) { el.value = NEXT_PART_ID; el.focus(); }
+    }
+
+    // Show/hide custom location input
+    const locSel = document.getElementById("f_location_code");
+    if (locSel) {
+      locSel.addEventListener("change", function() {
+        const row = document.getElementById("loc-other-row");
+        if (row) row.style.display = this.value === "__other__" ? "" : "none";
+      });
+    }
+
+    function updateReorder() {
+      const qtyEl   = document.getElementById("f_qty");
+      const thrEl   = document.getElementById("f_reorder_thresh");
+      const preview = document.getElementById("reorder-preview");
+      if (!preview || !qtyEl || !thrEl) return;
+      const qty = parseFloat(qtyEl.value);
+      const thr = parseFloat(thrEl.value);
+      if (isNaN(qty) || isNaN(thr) || thr <= 0) {
+        preview.textContent = "N/A";
+        preview.className = "reorder-preview reorder-na";
+      } else if (qty < thr) {
+        preview.textContent = "Yes — reorder needed";
+        preview.className = "reorder-preview reorder-yes";
+      } else {
+        preview.textContent = "No — stock OK";
+        preview.className = "reorder-preview reorder-no";
+      }
+    }
+
+    function getLocationCode() {
+      const sel = document.getElementById("f_location_code");
+      if (!sel) return "";
+      if (sel.value === "__other__") {
+        return (document.getElementById("f_location_other")?.value || "").trim();
+      }
+      return sel.value;
+    }
+
+    function val(id) {
+      const el = document.getElementById(id);
+      return el ? el.value.trim() : "";
+    }
+
+    async function submitItem() {
+      const partId = val("f_part_id");
+      if (!partId) {
+        showToast("Part ID is required", true);
+        return;
+      }
+
+      const btn = document.getElementById("submit-btn");
+      btn.disabled = true;
+      btn.textContent = "Saving…";
+
+      const fields = {};
+      ["part_id","part_name","category","zone","qty","reorder_thresh","condition"].forEach(k => {
+        const v = val("f_" + k);
+        if (v) fields[k] = v;
+      });
+      const loc = getLocationCode();
+      if (loc) fields["location_code"] = loc;
+
+      try {
+        const res  = await fetch("/api/add-item", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tab: TAB, fields }),
+        });
+        const json = await res.json();
+        if (json.ok) {
+          showToast("Item added!");
+          setTimeout(() => {
+            window.location.href = `/item?id=${encodeURIComponent(json.identifier)}&tab=${encodeURIComponent(TAB)}`;
+          }, 900);
+        } else {
+          showToast(json.error || "Save failed", true);
+          btn.disabled = false;
+          btn.textContent = "Add Item";
+        }
+      } catch (e) {
+        showToast("Network error", true);
+        btn.disabled = false;
+        btn.textContent = "Add Item";
+      }
+    }
+
+    function showToast(msg, isError) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.className = "show" + (isError ? " error" : "");
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => { t.className = ""; }, 2500);
+    }
+  </script>
+
+</body>
+</html>
