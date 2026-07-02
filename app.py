@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import re
 from flask import Flask, request, jsonify, render_template, abort, send_file
@@ -21,6 +22,15 @@ def regex_search_filter(value, pattern):
 SHEET_ID        = os.getenv("SHEET_ID")
 CREDS_PATH      = os.getenv("CREDENTIALS_PATH", "credentials.json")
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID", "")
+
+
+def _build_credentials() -> Credentials:
+    """Load credentials from env JSON string (Vercel) or file path (local/Render)."""
+    raw = os.getenv("GOOGLE_CREDENTIALS_JSON")
+    if raw:
+        info = json.loads(raw)
+        return Credentials.from_service_account_info(info, scopes=SCOPES)
+    return Credentials.from_service_account_file(CREDS_PATH, scopes=SCOPES)
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -51,15 +61,14 @@ _ss_cache = None
 def get_spreadsheet():
     global _ss_cache
     if _ss_cache is None:
-        creds  = Credentials.from_service_account_file(CREDS_PATH, scopes=SCOPES)
+        creds  = _build_credentials()
         client = gspread.authorize(creds)
         _ss_cache = client.open_by_key(SHEET_ID)
     return _ss_cache
 
 
 def get_drive_service():
-    creds = Credentials.from_service_account_file(CREDS_PATH, scopes=SCOPES)
-    return build("drive", "v3", credentials=creds)
+    return build("drive", "v3", credentials=_build_credentials())
 
 
 def drive_file_id(url: str) -> str:
