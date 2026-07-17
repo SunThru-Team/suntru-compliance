@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>{{ tab_meta[active_tab].display_name if active_tab in tab_meta else active_tab }} — SunThru</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:      #1F5C99;
+      --blue-dim:  #1a4f87;
+      --text:      #1A2333;
+      --sub:       #6B7585;
+      --cat:       #1F5C99;
+      --bg:        #F2F4F8;
+      --card:      #FFFFFF;
+      --border:    #E4E8EF;
+      --amber:     #F59E0B;
+      --green:     #10B981;
+      --red:       #EF4444;
+      --tab-h:     56px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Fixed top ── */
+    .top {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: env(safe-area-inset-top, 0) 0 0;
+    }
+    .top-inner {
+      padding: 14px 16px 10px;
+    }
+    .top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .top-row h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+    .add-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--blue);
+      border: none;
+      color: #fff;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .add-btn:hover { background: var(--blue-dim); }
+
+    /* Search bar */
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .search-wrap {
+      flex: 1;
+      position: relative;
+    }
+    .search-wrap svg {
+      position: absolute;
+      left: 10px; top: 50%;
+      transform: translateY(-50%);
+      color: #aaa;
+      pointer-events: none;
+    }
+    #search {
+      width: 100%;
+      padding: 9px 12px 9px 34px;
+      border-radius: 10px;
+      border: none;
+      background: #ECEEF2;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+    }
+    #search::placeholder { color: #aaa; }
+    .filter-btn {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      background: #ECEEF2;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--sub);
+      flex-shrink: 0;
+    }
+    .filter-btn:hover { background: #dde0e8; }
+
+    /* ── Count bar ── */
+    .count-bar {
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--sub);
+      letter-spacing: 0.02em;
+      border-top: 1px solid var(--border);
+      background: var(--card);
+    }
+
+    /* ── Scrollable list ── */
+    .list-wrap {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 8px);
+    }
+
+    /* ── List rows ── */
+    .list-section {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+    .list-row {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px 12px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      transition: background 0.1s;
+      gap: 12px;
+    }
+    .list-row:last-child { border-bottom: none; }
+    .list-row:active, .list-row:hover { background: #F7F9FC; }
+
+    .row-content { flex: 1; min-width: 0; }
+    .row-category {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--cat);
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .row-id {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .row-name {
+      font-size: 14px;
+      color: var(--sub);
+      margin-top: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Reorder dot */
+    .reorder-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-yes { background: var(--red); }
+    .dot-no  { background: var(--green); }
+    .dot-na  { background: #D1D5DB; }
+
+    /* Chevron */
+    .chevron {
+      color: #C7CDD8;
+      flex-shrink: 0;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--sub);
+      font-size: 15px;
+    }
+    .empty svg { margin-bottom: 12px; opacity: 0.4; }
+
+    /* ── Bottom tab bar ── */
+    .tab-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      z-index: 100;
+    }
+    .tab-bar::-webkit-scrollbar { display: none; }
+    .tab-bar a {
+      flex: 0 0 auto;
+      min-width: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 14px;
+      text-decoration: none;
+      color: #9BA5B4;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      gap: 3px;
+      transition: color 0.15s;
+      white-space: nowrap;
+    }
+    .tab-bar a.active { color: var(--blue); }
+    .tab-bar a svg { width: 22px; height: 22px; }
+
+    /* Loading spinner */
+    #loading {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(242,244,248,0.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    #loading.show { display: flex; }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #ddd;
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar: must measure its own height to set list offset -->
+  <div class="top" id="topbar">
+    <div class="top-inner">
+      <div class="top-row">
+        <h1>{{ tab_meta[active_tab].display_name if active_tab in tab_meta else active_tab }} Records</h1>
+        <a class="add-btn" href="/add?tab={{ active_tab }}" title="Add part" aria-label="Add part">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+        </a>
+      </div>
+      <div class="search-bar">
+        <div class="search-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input id="search" type="search" placeholder="Search" autocomplete="off" autocorrect="off" />
+        </div>
+        <button class="filter-btn" aria-label="Filter">
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" d="M4 6h16M7 12h10M10 18h4"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="count-bar" id="count-bar">
+      {{ items | length }} item{{ 's' if items | length != 1 else '' }}
+    </div>
+  </div>
+
+  <!-- Scrollable list -->
+  <div class="list-wrap" id="list-wrap">
+    <div class="list-section" id="list">
+      {% for item in items %}
+      {% set f = item.fields %}
+      {% set identifier = item.identifier %}
+      {% set display_name = f.part_name if f.part_name and f.part_name != identifier else '' %}
+      {% set category = f.category %}
+      {% set rf = f.reorder_flag | lower %}
+
+      <a class="list-row"
+         href="/item?id={{ identifier | urlencode }}&tab={{ item.tab }}"
+         data-search="{{ identifier | lower }} {{ display_name | lower }} {{ category | lower }} {{ f.location_code | lower }}"
+         onclick="showLoading()">
+
+        <div class="row-content">
+          {% if category %}
+          <div class="row-category">{{ category }}</div>
+          {% endif %}
+          <div class="row-id">{{ identifier }}</div>
+          {% if display_name %}
+          <div class="row-name">{{ display_name }}</div>
+          {% endif %}
+        </div>
+
+        {% if rf in ['yes', 'true', '1', 'y'] %}
+          <span class="reorder-dot dot-yes" title="Reorder needed"></span>
+        {% elif rf in ['no', 'false', '0', 'n'] %}
+          <span class="reorder-dot dot-no" title="Stock OK"></span>
+        {% else %}
+          <span class="reorder-dot dot-na" title="{{ f.reorder_flag or 'No flag' }}"></span>
+        {% endif %}
+
+        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
+          <path d="M1 1l7 7-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      {% else %}
+      <div class="empty">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2" display="block" style="margin:0 auto 12px">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0H4"/>
+        </svg>
+        No items found in {{ active_tab }}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Bottom tab bar -->
+  <nav class="tab-bar" id="tab-bar">
+    {% for tab in all_tabs %}
+    <a href="/?tab={{ tab }}"
+       class="{{ 'active' if tab == active_tab else '' }}"
+       onclick="showLoading()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="{% if tab == active_tab %}2.2{% else %}1.8{% endif %}">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+      </svg>
+      {{ tab_meta[tab].display_name if tab in tab_meta else tab }}
+    </a>
+    {% endfor %}
+  </nav>
+
+  <div id="loading"><div class="spinner"></div></div>
+
+  <script>
+    // Offset list below the dynamic topbar height
+    function setOffset() {
+      const h = document.getElementById("topbar").offsetHeight;
+      document.getElementById("list-wrap").style.paddingTop = h + "px";
+      document.getElementById("list-wrap").style.marginTop  = "0";
+    }
+    setOffset();
+    window.addEventListener("resize", setOffset);
+
+    // Scroll active tab into view
+    (function() {
+      const active = document.querySelector(".tab-bar a.active");
+      if (active) active.scrollIntoView({ inline: "center", block: "nearest", behavior: "instant" });
+    })();
+
+    // Live search
+    const searchEl  = document.getElementById("search");
+    const countBar  = document.getElementById("count-bar");
+    const allRows   = Array.from(document.querySelectorAll(".list-row"));
+    searchEl.addEventListener("input", () => {
+      const q = searchEl.value.toLowerCase();
+      let visible = 0;
+      allRows.forEach(row => {
+        const match = !q || row.dataset.search.includes(q);
+        row.style.display = match ? "" : "none";
+        if (match) visible++;
+      });
+      const total = allRows.length;
+      countBar.textContent = q
+        ? `${visible} of ${total} item${total !== 1 ? "s" : ""}`
+        : `${total} item${total !== 1 ? "s" : ""}`;
+    });
+
+    function showLoading() {
+      document.getElementById("loading").classList.add("show");
+    }
+  </script>
+
+</body>
+</html>
