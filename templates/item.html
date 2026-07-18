@@ -161,6 +161,7 @@
       display: inline-flex; align-items: center; gap: 5px;
       font-size: 13px; font-weight: 600;
       color: var(--blue); text-decoration: none;
+      background: none; border: none; padding: 0; cursor: pointer; font-family: inherit;
     }
     .qr-dl:hover { text-decoration: underline; }
 
@@ -412,14 +413,12 @@
     <div class="qr-text">
       <h3>Scan to look up this part</h3>
       <p>Print and attach to the physical item for quick mobile access.</p>
-      <a class="qr-dl"
-         href="/qr/{{ item.tab }}/{{ item.identifier | urlencode }}.png"
-         download="{{ item.identifier }}-qr.png">
+      <button class="qr-dl" onclick="downloadQR()">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
         </svg>
         Download QR
-      </a>
+      </button>
     </div>
   </div>
 
@@ -493,7 +492,7 @@
     <div class="photo-panel" id="panel-upload">
       <img id="upload-preview" class="upload-preview" alt="Preview" />
       <div class="upload-zone" id="upload-zone">
-        <input type="file" id="photo-file" accept="image/*" capture="environment"
+        <input type="file" id="photo-file" accept="image/*"
                onchange="previewFile(this)" />
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" display="block" margin="0 auto 8px">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
@@ -542,6 +541,23 @@
         <option value="{{ opt }}" {% if f.condition == opt %}selected{% endif %}>{{ opt }}</option>
         {% endfor %}
       </select>
+    </div>
+    {% endif %}
+
+    {% if 'location_code' in col_map %}
+    <div class="field-row">
+      <label for="f-location-code">Location Code</label>
+      <select id="f-location-code">
+        <option value="">— keep current —</option>
+        {% for lc in location_codes %}
+        <option value="{{ lc }}" {% if f.location_code == lc %}selected{% endif %}>{{ lc }}</option>
+        {% endfor %}
+        <option value="__other__">Other…</option>
+      </select>
+    </div>
+    <div class="field-row" id="f-loc-other-row" style="display:none">
+      <label for="f-location-other">Custom Code</label>
+      <input type="text" id="f-location-other" placeholder="Type location code" autocomplete="off" />
     </div>
     {% endif %}
 
@@ -604,7 +620,44 @@
   if (threshEl) threshEl.addEventListener("input", updateFlagDisplay);
   updateFlagDisplay();
 
-  // ── Save qty / condition / threshold ──────────────────────
+  // ── Location code "Other" toggle ──────────────────────────
+  const locCodeSel = document.getElementById("f-location-code");
+  if (locCodeSel) {
+    locCodeSel.addEventListener("change", function() {
+      const row = document.getElementById("f-loc-other-row");
+      if (row) row.style.display = this.value === "__other__" ? "" : "none";
+    });
+  }
+  function getLocationCode() {
+    if (!locCodeSel) return "";
+    if (locCodeSel.value === "__other__") {
+      return (document.getElementById("f-location-other")?.value || "").trim();
+    }
+    return locCodeSel.value;
+  }
+
+  // ── QR download (Web Share on mobile, blob on desktop) ────
+  async function downloadQR() {
+    const url = `/qr/{{ item.tab | urlencode }}/{{ item.identifier | urlencode }}.png`;
+    const filename = `{{ item.identifier }}-qr.png`;
+    try {
+      const res  = await fetch(url);
+      const blob = await res.blob();
+      const file = new File([blob], filename, { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: filename });
+        return;
+      }
+    } catch(e) { /* fall through to blob download */ }
+    const a = document.createElement("a");
+    a.href = `/qr/{{ item.tab | urlencode }}/{{ item.identifier | urlencode }}.png`;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  // ── Save qty / condition / threshold / location_code ──────
   if (saveBtn) saveBtn.addEventListener("click", async () => {
     saveBtn.disabled    = true;
     saveBtn.textContent = "Saving…";
@@ -613,9 +666,10 @@
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tab: TAB, sheet_row: SHEET_ROW,
-          qty:       qtyEl    ? qtyEl.value    : "",
-          condition: condEl   ? condEl.value   : "",
-          threshold: threshEl ? threshEl.value : "",
+          qty:           qtyEl    ? qtyEl.value    : "",
+          condition:     condEl   ? condEl.value   : "",
+          threshold:     threshEl ? threshEl.value : "",
+          location_code: getLocationCode(),
         }),
       });
       const data = await res.json();

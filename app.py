@@ -268,10 +268,11 @@ def item_page():
     item = find_item(identifier, tab)
     if item is None:
         abort(404, f"'{identifier}' not found in {tab}")
-    data    = get_tab_items(tab)
-    col_map = data["col_map"]
+    data           = get_tab_items(tab)
+    col_map        = data["col_map"]
+    location_codes = get_location_codes()
     return render_template("item.html",
-        item=item, col_map=col_map,
+        item=item, col_map=col_map, location_codes=location_codes,
         all_tabs=get_all_tabs(), tab_meta=get_tab_meta())
 
 
@@ -329,9 +330,10 @@ def api_save():
     body      = request.get_json(force=True)
     tab       = body.get("tab", "").strip()
     sheet_row = int(body.get("sheet_row", 0))
-    qty       = str(body.get("qty", "")).strip()
-    condition = body.get("condition", "").strip()
-    threshold = str(body.get("threshold", "")).strip()
+    qty           = str(body.get("qty", "")).strip()
+    condition     = body.get("condition", "").strip()
+    threshold     = str(body.get("threshold", "")).strip()
+    location_code = body.get("location_code", "").strip()
 
     if not tab or sheet_row <= 0:
         return jsonify({"ok": False, "error": "Invalid tab or row"}), 400
@@ -343,10 +345,11 @@ def api_save():
     reorder_flag = compute_reorder_flag(qty, threshold) if threshold else None
 
     updates = {}
-    if qty:          updates["qty"]           = qty
-    if condition:    updates["condition"]      = condition
-    if threshold:    updates["reorder_thresh"] = threshold
-    if reorder_flag: updates["reorder_flag"]   = reorder_flag
+    if qty:            updates["qty"]           = qty
+    if condition:      updates["condition"]      = condition
+    if threshold:      updates["reorder_thresh"] = threshold
+    if reorder_flag:   updates["reorder_flag"]   = reorder_flag
+    if location_code:  updates["location_code"]  = location_code
 
     try:
         write_fields(tab, sheet_row, updates, col_map)
