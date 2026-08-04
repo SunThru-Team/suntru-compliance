@@ -47,7 +47,7 @@ FIELD_ALIASES = {
     "category":       ["category", "type", "section", "group", "component type", "assembly", "system"],
     "location_code":  ["location code", "location", "loc code", "loc", "bin", "shelf"],
     "zone":           ["zone"],
-    "qty":            ["qty", "quantity", "count", "on hand", "stock qty", "stock"],
+    "qty":            ["qty", "quantity", "count", "on hand", "quantity on hand", "qty on hand", "stock qty", "stock"],
     "condition":      ["condition", "status", "state"],
     "reorder_thresh": ["reorder threshold", "reorder thresh", "min qty", "minimum", "threshold", "reorder level", "reorder point"],
     "reorder_flag":   ["reorder flag", "reorder", "flag", "needs reorder", "order needed"],
