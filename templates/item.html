@@ -504,7 +504,7 @@
         <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
         <div class="progress-label" id="progress-label">Uploading…</div>
       </div>
-      <button class="btn-primary" id="upload-btn" onclick="uploadPhoto()" disabled>Upload to Drive</button>
+      <button class="btn-primary" id="upload-btn" onclick="uploadPhoto()" disabled style="display:none">Upload to Drive</button>
     </div>
   </div>
 
@@ -657,11 +657,58 @@
     document.body.removeChild(a);
   }
 
-  // ── Save qty / condition / threshold / location_code ──────
+  // ── Save qty / condition / threshold / location_code (+ auto photo upload) ──
   if (saveBtn) saveBtn.addEventListener("click", async () => {
     saveBtn.disabled    = true;
     saveBtn.textContent = "Saving…";
     try {
+      // Auto-upload photo if one is staged
+      const fileInput = document.getElementById("photo-file");
+      if (fileInput && fileInput.files[0]) {
+        saveBtn.textContent = "Uploading photo…";
+        const form = new FormData();
+        form.append("tab",                TAB);
+        form.append("sheet_row",          SHEET_ROW);
+        form.append("identifier",         ID);
+        form.append("existing_photo_url", currentPhotoUrl);
+        form.append("photo",              fileInput.files[0]);
+        const upRes  = await fetch("/api/upload-photo", { method: "POST", body: form });
+        const upData = await upRes.json();
+        if (upData.ok) {
+          currentPhotoUrl = upData.url;
+          const photoWrap  = document.getElementById("current-photo-wrap");
+          const currentImg = document.getElementById("current-photo");
+          if (currentImg) {
+            currentImg.src = localPreviewSrc;
+          } else {
+            photoWrap.innerHTML = `
+              <div class="photo-preview-wrap">
+                <img id="current-photo" class="photo-preview"
+                     src="${localPreviewSrc}" alt="Photo of ${ID}" />
+                <div style="padding:8px 16px 12px;display:flex;gap:12px;align-items:center;">
+                  <a class="photo-link-ext" href="${upData.url}" target="_blank" rel="noopener" style="font-size:12px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                    Open in Drive
+                  </a>
+                  <button onclick="clearPhoto()" style="background:none;border:none;color:#EF4444;font-size:12px;font-weight:600;cursor:pointer;padding:0;font-family:inherit;">Remove photo</button>
+                </div>
+              </div>`;
+          }
+          photoWrap.style.display = "";
+          document.getElementById("upload-tab-btn").textContent = "Replace Photo";
+          fileInput.value = "";
+          document.getElementById("upload-btn").disabled = true;
+        } else {
+          showToast("Photo upload failed: " + (upData.error || "Unknown"), "error");
+          saveBtn.disabled = false; saveBtn.textContent = "Save Changes";
+          return;
+        }
+      }
+
+      // Save record fields
+      saveBtn.textContent = "Saving…";
       const res  = await fetch("/api/save", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
