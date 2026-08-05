@@ -7,51 +7,36 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --label-height: 40mm;
-      --qr-size: 28mm;
-      --font-name: 5mm;
-      --font-loc: 4mm;
-      --font-id: 3.5mm;
-    }
+    /* ── Print page size (updated by JS) ── */
+    @page { size: 62mm 40mm; margin: 0; }
 
-    @page {
-      size: 62mm var(--label-height);
-      margin: 0;
-    }
-
-    html, body {
-      background: #fff;
+    body {
       font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
 
+    /* ── The actual label — always 62mm wide, height in mm ── */
     .label {
       width: 62mm;
-      height: var(--label-height);
-      padding: 2mm 2mm;
+      height: 40mm;           /* overridden by JS */
+      padding: 2mm;
       display: flex;
       flex-direction: row;
       align-items: center;
       gap: 2mm;
       overflow: hidden;
+      background: #fff;
+      transform-origin: top left;
     }
 
-    /* ── QR code ── */
-    .qr-wrap {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+    .qr-wrap { flex-shrink: 0; }
     .qr-wrap img {
-      width: var(--qr-size);
-      height: var(--qr-size);
+      width: 28mm;            /* overridden by JS */
+      height: 28mm;
       display: block;
     }
 
-    /* ── Text block ── */
     .label-text {
       flex: 1;
       display: flex;
@@ -60,160 +45,117 @@
       gap: 1mm;
       min-width: 0;
     }
-    .label-name {
-      font-size: var(--font-name);
-      font-weight: 800;
-      color: #000;
-      line-height: 1.2;
-      word-break: break-word;
-    }
-    .label-location {
-      font-size: var(--font-loc);
-      font-weight: 700;
-      color: #000;
-      letter-spacing: 0.3px;
-    }
-    .label-id {
-      font-size: var(--font-id);
-      font-style: italic;
-      color: #444;
-    }
+    .label-name     { font-size: 5mm;   font-weight: 800; color: #000; line-height: 1.2; word-break: break-word; }
+    .label-location { font-size: 4mm;   font-weight: 700; color: #000; }
+    .label-id       { font-size: 3.5mm; font-style: italic; color: #444; }
 
-    /* ── Screen-only UI ── */
+    /* ── Screen layout ── */
     @media screen {
       body {
         background: #e5e7eb;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: flex-start;
-        min-height: 100vh;
         padding: 20px 16px;
         gap: 16px;
-        width: 100%;
-      }
-      .label {
-        background: #fff;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+        min-height: 100vh;
       }
 
-      /* Controls panel */
+      /* Wrapper scales the 62mm label up to fill screen width */
+      .label-outer {
+        width: 100%;
+        max-width: 360px;
+        /* height set by JS based on scale */
+        position: relative;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+      }
+      .label {
+        position: absolute;
+        top: 0; left: 0;
+        /* transform: scale(factor) set by JS */
+      }
+
       .controls {
         background: #fff;
         border: 1px solid #d1d5db;
         border-radius: 12px;
         padding: 16px;
         width: 100%;
-        max-width: 320px;
+        max-width: 360px;
         display: flex;
         flex-direction: column;
         gap: 12px;
       }
       .controls h3 {
-        font-size: 13px;
-        font-weight: 700;
-        color: #6b7280;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 2px;
+        font-size: 13px; font-weight: 700; color: #6b7280;
+        text-transform: uppercase; letter-spacing: 0.5px;
       }
-      .ctrl-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-      .ctrl-row label {
-        font-size: 14px;
-        color: #374151;
-        width: 90px;
-        flex-shrink: 0;
-      }
-      .ctrl-row input[type=range] {
-        flex: 1;
-        accent-color: #1F5C99;
-      }
-      .ctrl-val {
-        font-size: 13px;
-        color: #6b7280;
-        width: 38px;
-        text-align: right;
-        flex-shrink: 0;
-      }
+      .ctrl-row { display: flex; align-items: center; gap: 10px; }
+      .ctrl-row label { font-size: 14px; color: #374151; width: 100px; flex-shrink: 0; }
+      .ctrl-row input[type=range] { flex: 1; accent-color: #1F5C99; }
+      .ctrl-val { font-size: 13px; color: #6b7280; width: 40px; text-align: right; flex-shrink: 0; }
 
-      .print-bar {
-        display: flex;
-        gap: 10px;
-        width: 100%;
-        max-width: 320px;
-      }
+      .print-bar { display: flex; gap: 10px; width: 100%; max-width: 360px; }
       .btn {
-        padding: 14px 0;
-        border-radius: 12px;
-        font-size: 16px;
-        font-weight: 700;
-        cursor: pointer;
-        border: none;
-        font-family: inherit;
-        flex: 1;
+        padding: 14px 0; border-radius: 12px; font-size: 16px;
+        font-weight: 700; cursor: pointer; border: none;
+        font-family: inherit; flex: 1; text-align: center;
+        text-decoration: none; display: flex; align-items: center; justify-content: center;
       }
       .btn-print { background: #1F5C99; color: #fff; }
       .btn-back  { background: #e5e7eb; color: #374151; }
     }
 
     @media print {
-      .print-bar, .controls { display: none !important; }
-      body { background: #fff; padding: 0; width: 62mm; }
+      .controls, .print-bar, .label-outer { box-shadow: none; border: none; border-radius: 0; }
+      .label-outer { position: static; overflow: visible; }
+      .label { position: static; transform: none !important; }
+      body { background: #fff; padding: 0; }
     }
   </style>
 </head>
 <body>
 
-  <div class="label" id="label">
-    <div class="qr-wrap">
-      <img id="qr-img"
-           src="/qr/{{ item.tab | urlencode }}/{{ item.identifier | urlencode }}.png"
-           alt="QR code" />
-    </div>
-    <div class="label-text">
-      {% if f.part_name %}
-      <div class="label-name">{{ f.part_name }}</div>
-      {% endif %}
-      {% if f.location_code %}
-      <div class="label-location">{{ f.location_code }}</div>
-      {% endif %}
-      <div class="label-id">{{ item.identifier }}</div>
+  <div class="label-outer" id="label-outer">
+    <div class="label" id="label">
+      <div class="qr-wrap">
+        <img id="qr-img"
+             src="/qr/{{ item.tab | urlencode }}/{{ item.identifier | urlencode }}.png"
+             alt="QR" />
+      </div>
+      <div class="label-text">
+        {% if f.part_name %}<div class="label-name" id="t-name">{{ f.part_name }}</div>{% endif %}
+        {% if f.location_code %}<div class="label-location" id="t-loc">{{ f.location_code }}</div>{% endif %}
+        <div class="label-id" id="t-id">{{ item.identifier }}</div>
+      </div>
     </div>
   </div>
 
   <div class="controls">
     <h3>Adjust Label</h3>
-
     <div class="ctrl-row">
       <label>Height</label>
       <input type="range" id="s-height" min="20" max="80" value="40" step="1" />
       <span class="ctrl-val" id="v-height">40mm</span>
     </div>
-
     <div class="ctrl-row">
       <label>QR Size</label>
       <input type="range" id="s-qr" min="10" max="55" value="28" step="1" />
       <span class="ctrl-val" id="v-qr">28mm</span>
     </div>
-
     <div class="ctrl-row">
       <label>Name Size</label>
       <input type="range" id="s-name" min="2" max="10" value="5" step="0.5" />
       <span class="ctrl-val" id="v-name">5mm</span>
     </div>
-
     <div class="ctrl-row">
       <label>Location Size</label>
       <input type="range" id="s-loc" min="2" max="8" value="4" step="0.5" />
       <span class="ctrl-val" id="v-loc">4mm</span>
     </div>
-
     <div class="ctrl-row">
       <label>ID Size</label>
       <input type="range" id="s-id" min="2" max="7" value="3.5" step="0.5" />
@@ -229,37 +171,72 @@
   </div>
 
   <script>
-    const root     = document.documentElement;
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
     if (!isMobile) document.getElementById('btn-label').textContent = 'Print Label';
 
+    // Slider state (mm values for PNG generation)
     let heightMm = 40, qrMm = 28;
 
-    function wire(sliderId, valId, cssVar, unit) {
-      const slider = document.getElementById(sliderId);
-      const val    = document.getElementById(valId);
-      slider.addEventListener('input', () => {
-        const v = slider.value + unit;
-        root.style.setProperty(cssVar, v);
-        val.textContent = v;
-        if (cssVar === '--label-height') { heightMm = parseFloat(slider.value); updatePageSize(slider.value); }
-        if (cssVar === '--qr-size')       qrMm     = parseFloat(slider.value);
+    const label = document.getElementById('label');
+    const outer = document.getElementById('label-outer');
+
+    // 1mm in CSS pixels (at 96dpi: 1mm = 3.7795px)
+    const MM = 96 / 25.4;
+
+    function rescale() {
+      const outerW = outer.offsetWidth;
+      const labelW = 62 * MM;           // 62mm in px
+      const labelH = heightMm * MM;
+      const scale  = outerW / labelW;
+
+      label.style.transform = `scale(${scale})`;
+      label.style.width     = `${labelW}px`;
+      label.style.height    = `${labelH}px`;
+      outer.style.height    = `${labelH * scale}px`;
+    }
+
+    function updatePageCss(h) {
+      let el = document.getElementById('dp');
+      if (!el) { el = document.createElement('style'); el.id = 'dp'; document.head.appendChild(el); }
+      el.textContent = `@page { size: 62mm ${h}mm; margin: 0; }`;
+    }
+
+    function wire(id, valId, prop, unit, onChange) {
+      const s = document.getElementById(id);
+      const v = document.getElementById(valId);
+      s.addEventListener('input', () => {
+        v.textContent = s.value + unit;
+        if (onChange) onChange(parseFloat(s.value));
       });
     }
 
-    function updatePageSize(mm) {
-      let el = document.getElementById('dynamic-page');
-      if (!el) { el = document.createElement('style'); el.id = 'dynamic-page'; document.head.appendChild(el); }
-      el.textContent = `@page { size: 62mm ${mm}mm; margin: 0; }`;
-    }
+    wire('s-height', 'v-height', null, 'mm', v => {
+      heightMm = v;
+      updatePageCss(v);
+      rescale();
+    });
+    wire('s-qr', 'v-qr', null, 'mm', v => {
+      qrMm = v;
+      const img = document.getElementById('qr-img');
+      img.style.width = img.style.height = (v * MM) + 'px';
+    });
+    wire('s-name', 'v-name', null, 'mm', v => {
+      const el = document.getElementById('t-name');
+      if (el) el.style.fontSize = (v * MM) + 'px';
+    });
+    wire('s-loc', 'v-loc', null, 'mm', v => {
+      const el = document.getElementById('t-loc');
+      if (el) el.style.fontSize = (v * MM) + 'px';
+    });
+    wire('s-id', 'v-id', null, 'mm', v => {
+      const el = document.getElementById('t-id');
+      if (el) el.style.fontSize = (v * MM) + 'px';
+    });
 
-    wire('s-height', 'v-height', '--label-height', 'mm');
-    wire('s-qr',     'v-qr',     '--qr-size',      'mm');
-    wire('s-name',   'v-name',   '--font-name',     'mm');
-    wire('s-loc',    'v-loc',    '--font-loc',      'mm');
-    wire('s-id',     'v-id',     '--font-id',       'mm');
+    window.addEventListener('load', rescale);
+    window.addEventListener('resize', rescale);
 
+    // ── Print / Save ──
     document.getElementById('btn-print').addEventListener('click', async () => {
       if (!isMobile) { window.print(); return; }
 
@@ -276,14 +253,13 @@
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file], title: 'Label {{ item.identifier }}' });
         } else {
-          // Fallback: trigger download
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
           a.download = file.name;
           a.click();
         }
       } catch (e) {
-        if (e.name !== 'AbortError') alert('Could not share image: ' + e.message);
+        if (e.name !== 'AbortError') alert('Could not share: ' + e.message);
       } finally {
         btn.disabled = false;
         document.getElementById('btn-label').textContent = 'Save to Photos';
