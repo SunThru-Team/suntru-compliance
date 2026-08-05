@@ -172,7 +172,7 @@
 
   <script>
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (!isMobile) document.getElementById('btn-label').textContent = 'Print Label';
+    if (!isMobile) document.getElementById('btn-label').textContent = 'Open in Preview';
 
     // Slider state (mm values for PNG generation)
     let heightMm = 40, qrMm = 28;
@@ -238,7 +238,14 @@
 
     // ── Print / Save ──
     document.getElementById('btn-print').addEventListener('click', async () => {
-      if (!isMobile) { window.print(); return; }
+      if (!isMobile) {
+        // Download PNG — macOS opens it in Preview automatically
+        const a = document.createElement('a');
+        a.href = imageUrl();
+        a.download = 'label-{{ item.identifier }}.png';
+        a.click();
+        return;
+      }
 
       const btn = document.getElementById('btn-print');
       btn.disabled = true;
