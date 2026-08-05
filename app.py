@@ -306,11 +306,11 @@ def label_image(tab, identifier):
         try: return max(lo, min(hi, float(request.args.get(key, default))))
         except ValueError: return default
 
-    height_mm    = _f("h",  22, 15, 60)
-    qr_mm        = _f("qr", 16,  8, 50)
-    font_name_mm = _f("fn",  5,  2, 12)
-    font_loc_mm  = _f("fl",  4,  2, 10)
-    font_id_mm   = _f("fi", 3.2, 2,  8)
+    height_mm    = _f("h",  22,  15, 60)
+    qr_mm        = _f("qr", 18,   8, 50)
+    font_name_mm = _f("fn",  4,   2, 12)
+    font_loc_mm  = _f("fl",  4,   2, 10)
+    font_id_mm   = _f("fi", 3.5,  2,  8)
 
     W = mm2px(62)
     H = mm2px(height_mm)

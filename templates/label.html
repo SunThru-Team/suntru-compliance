@@ -29,7 +29,7 @@
     }
 
     .qr-wrap { flex-shrink: 0; }
-    .qr-wrap img { width: 16mm; height: 16mm; display: block; }
+    .qr-wrap img { width: 18mm; height: 18mm; display: block; }
 
     .label-text {
       flex: 1;
@@ -39,9 +39,9 @@
       gap: 0.8mm;
       min-width: 0;
     }
-    .label-name     { font-size: 5mm;   font-weight: 800; color: #000; line-height: 1.15; word-break: break-word; }
+    .label-name     { font-size: 4mm;   font-weight: 800; color: #000; line-height: 1.15; word-break: break-word; }
     .label-location { font-size: 4mm;   font-weight: 700; color: #000; }
-    .label-id       { font-size: 3.2mm; font-style: italic; color: #555; }
+    .label-id       { font-size: 3.5mm; font-style: italic; color: #555; }
 
     @media screen {
       body {
@@ -127,13 +127,13 @@
     </div>
     <div class="ctrl-row">
       <label>QR Size</label>
-      <input type="range" id="s-qr" min="8" max="50" value="16" step="1" />
-      <span class="ctrl-val" id="v-qr">16mm</span>
+      <input type="range" id="s-qr" min="8" max="50" value="18" step="1" />
+      <span class="ctrl-val" id="v-qr">18mm</span>
     </div>
     <div class="ctrl-row">
       <label>Name Size</label>
-      <input type="range" id="s-name" min="2" max="12" value="5" step="0.5" />
-      <span class="ctrl-val" id="v-name">5mm</span>
+      <input type="range" id="s-name" min="2" max="12" value="4" step="0.5" />
+      <span class="ctrl-val" id="v-name">4mm</span>
     </div>
     <div class="ctrl-row">
       <label>Location Size</label>
@@ -142,8 +142,8 @@
     </div>
     <div class="ctrl-row">
       <label>ID Size</label>
-      <input type="range" id="s-id" min="2" max="8" value="3.2" step="0.5" />
-      <span class="ctrl-val" id="v-id">3.2mm</span>
+      <input type="range" id="s-id" min="2" max="8" value="3.5" step="0.5" />
+      <span class="ctrl-val" id="v-id">3.5mm</span>
     </div>
   </div>
 
@@ -162,7 +162,7 @@
     const label = document.getElementById('label');
     const outer = document.getElementById('label-outer');
 
-    let heightMm = 22, qrMm = 16, nameMm = 5, locMm = 4, idMm = 3.2;
+    let heightMm = 22, qrMm = 18, nameMm = 4, locMm = 4, idMm = 3.5;
 
     function rescale() {
       const scale = outer.offsetWidth / (62 * MM);
