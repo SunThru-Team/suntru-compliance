@@ -303,10 +303,10 @@ def label_image(tab, identifier):
         return int(round(mm / MM_PER_INCH * DPI))
 
     height_mm    = 22
-    qr_mm        = 18
-    font_name_mm = 5.5
-    font_loc_mm  = 4.5
-    font_id_mm   = 3.5
+    qr_mm        = 16
+    font_name_mm = 5.0
+    font_loc_mm  = 4.0
+    font_id_mm   = 3.2
 
     W = mm2px(62)
     H = mm2px(height_mm)
@@ -336,14 +336,25 @@ def label_image(tab, identifier):
     text_w  = W - text_x - pad
 
     def best_font(size_mm):
-        size_pt = int(size_mm / MM_PER_INCH * DPI * 0.75)
-        try:
-            return ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", size_pt)
-        except Exception:
+        size_px = int(round(mm2px(size_mm)))
+        font_paths = [
+            "/System/Library/Fonts/Helvetica.ttc",                          # macOS
+            "/System/Library/Fonts/Arial.ttf",                               # macOS alt
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",          # Debian/Ubuntu
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",  # CentOS/Amazon Linux
+            "/usr/share/fonts/liberation/LiberationSans-Bold.ttf",
+            "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+        ]
+        for path in font_paths:
             try:
-                return ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", size_pt)
+                return ImageFont.truetype(path, size_px)
             except Exception:
-                return ImageFont.load_default()
+                continue
+        # Pillow 10+ built-in scalable font
+        try:
+            return ImageFont.load_default(size=size_px)
+        except TypeError:
+            return ImageFont.load_default()
 
     lines = []
     if f.get("part_name"):
