@@ -223,15 +223,18 @@
   </div>
 
   <div class="print-bar">
-    <button class="btn btn-print" id="btn-print">Print Label</button>
-    <button class="btn btn-back"  onclick="history.back()">Back</button>
+    <button class="btn btn-print" id="btn-print">
+      <span id="btn-label">Save to Photos</span>
+    </button>
+    <a class="btn btn-back" href="/item?id={{ item.identifier | urlencode }}&tab={{ item.tab | urlencode }}">Back</a>
   </div>
 
   <script>
-    const root   = document.documentElement;
+    const root     = document.documentElement;
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-    // Current slider values
+    if (!isMobile) document.getElementById('btn-label').textContent = 'Print Label';
+
     let heightMm = 40, qrMm = 28;
 
     function wire(sliderId, valId, cssVar, unit) {
@@ -242,7 +245,7 @@
         root.style.setProperty(cssVar, v);
         val.textContent = v;
         if (cssVar === '--label-height') { heightMm = parseFloat(slider.value); updatePageSize(slider.value); }
-        if (cssVar === '--qr-size')       qrMm = parseFloat(slider.value);
+        if (cssVar === '--qr-size')       qrMm     = parseFloat(slider.value);
       });
     }
 
@@ -258,13 +261,33 @@
     wire('s-loc',    'v-loc',    '--font-loc',      'mm');
     wire('s-id',     'v-id',     '--font-id',       'mm');
 
-    document.getElementById('btn-print').addEventListener('click', () => {
-      if (isMobile) {
-        // Open generated PNG — AirPrint from Photos respects exact dimensions
-        const url = imageUrl();
-        window.open(url, '_blank');
-      } else {
-        window.print();
+    document.getElementById('btn-print').addEventListener('click', async () => {
+      if (!isMobile) { window.print(); return; }
+
+      const btn = document.getElementById('btn-print');
+      btn.disabled = true;
+      document.getElementById('btn-label').textContent = 'Preparing…';
+
+      try {
+        const url  = imageUrl();
+        const resp = await fetch(url);
+        const blob = await resp.blob();
+        const file = new File([blob], 'label-{{ item.identifier }}.png', { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'Label {{ item.identifier }}' });
+        } else {
+          // Fallback: trigger download
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = file.name;
+          a.click();
+        }
+      } catch (e) {
+        if (e.name !== 'AbortError') alert('Could not share image: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        document.getElementById('btn-label').textContent = 'Save to Photos';
       }
     });
 
