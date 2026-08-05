@@ -302,11 +302,15 @@ def label_image(tab, identifier):
     def mm2px(mm):
         return int(round(mm / MM_PER_INCH * DPI))
 
-    height_mm    = 22
-    qr_mm        = 16
-    font_name_mm = 5.0
-    font_loc_mm  = 4.0
-    font_id_mm   = 3.2
+    def _f(key, default, lo, hi):
+        try: return max(lo, min(hi, float(request.args.get(key, default))))
+        except ValueError: return default
+
+    height_mm    = _f("h",  22, 15, 60)
+    qr_mm        = _f("qr", 16,  8, 50)
+    font_name_mm = _f("fn",  5,  2, 12)
+    font_loc_mm  = _f("fl",  4,  2, 10)
+    font_id_mm   = _f("fi", 3.2, 2,  8)
 
     W = mm2px(62)
     H = mm2px(height_mm)

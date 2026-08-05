@@ -29,7 +29,7 @@
     }
 
     .qr-wrap { flex-shrink: 0; }
-    .qr-wrap img { width: 18mm; height: 18mm; display: block; }
+    .qr-wrap img { width: 16mm; height: 16mm; display: block; }
 
     .label-text {
       flex: 1;
@@ -39,9 +39,9 @@
       gap: 0.8mm;
       min-width: 0;
     }
-    .label-name     { font-size: 5.5mm; font-weight: 800; color: #000; line-height: 1.15; word-break: break-word; }
-    .label-location { font-size: 4.5mm; font-weight: 700; color: #000; }
-    .label-id       { font-size: 3.5mm; font-style: italic; color: #555; }
+    .label-name     { font-size: 5mm;   font-weight: 800; color: #000; line-height: 1.15; word-break: break-word; }
+    .label-location { font-size: 4mm;   font-weight: 700; color: #000; }
+    .label-id       { font-size: 3.2mm; font-style: italic; color: #555; }
 
     @media screen {
       body {
@@ -50,7 +50,7 @@
         flex-direction: column;
         align-items: center;
         padding: 24px 16px;
-        gap: 20px;
+        gap: 16px;
         min-height: 100vh;
       }
       .label-outer {
@@ -64,6 +64,26 @@
       }
       .label { position: absolute; top: 0; left: 0; }
 
+      .controls {
+        background: #fff;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        padding: 14px 16px;
+        width: 100%;
+        max-width: 360px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .controls h3 {
+        font-size: 12px; font-weight: 700; color: #6b7280;
+        text-transform: uppercase; letter-spacing: 0.5px;
+      }
+      .ctrl-row { display: flex; align-items: center; gap: 10px; }
+      .ctrl-row label { font-size: 14px; color: #374151; width: 95px; flex-shrink: 0; }
+      .ctrl-row input[type=range] { flex: 1; accent-color: #1F5C99; }
+      .ctrl-val { font-size: 13px; color: #6b7280; width: 38px; text-align: right; flex-shrink: 0; }
+
       .print-bar { display: flex; gap: 12px; width: 100%; max-width: 360px; }
       .btn {
         padding: 15px 0; border-radius: 12px; font-size: 17px;
@@ -76,7 +96,7 @@
     }
 
     @media print {
-      .print-bar { display: none !important; }
+      .controls, .print-bar { display: none !important; }
       .label-outer { border: none; border-radius: 0; box-shadow: none; }
       .label { position: static; transform: none !important; }
       body { background: #fff; padding: 0; }
@@ -88,13 +108,42 @@
   <div class="label-outer" id="label-outer">
     <div class="label" id="label">
       <div class="qr-wrap">
-        <img src="/qr/{{ item.tab | urlencode }}/{{ item.identifier | urlencode }}.png" alt="QR" />
+        <img id="qr-img" src="/qr/{{ item.tab | urlencode }}/{{ item.identifier | urlencode }}.png" alt="QR" />
       </div>
       <div class="label-text">
-        {% if f.part_name %}<div class="label-name">{{ f.part_name }}</div>{% endif %}
-        {% if f.location_code %}<div class="label-location">{{ f.location_code }}</div>{% endif %}
-        <div class="label-id">{{ item.identifier }}</div>
+        {% if f.part_name %}<div class="label-name" id="t-name">{{ f.part_name }}</div>{% endif %}
+        {% if f.location_code %}<div class="label-location" id="t-loc">{{ f.location_code }}</div>{% endif %}
+        <div class="label-id" id="t-id">{{ item.identifier }}</div>
       </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <h3>Adjust Label</h3>
+    <div class="ctrl-row">
+      <label>Height</label>
+      <input type="range" id="s-height" min="15" max="60" value="22" step="1" />
+      <span class="ctrl-val" id="v-height">22mm</span>
+    </div>
+    <div class="ctrl-row">
+      <label>QR Size</label>
+      <input type="range" id="s-qr" min="8" max="50" value="16" step="1" />
+      <span class="ctrl-val" id="v-qr">16mm</span>
+    </div>
+    <div class="ctrl-row">
+      <label>Name Size</label>
+      <input type="range" id="s-name" min="2" max="12" value="5" step="0.5" />
+      <span class="ctrl-val" id="v-name">5mm</span>
+    </div>
+    <div class="ctrl-row">
+      <label>Location Size</label>
+      <input type="range" id="s-loc" min="2" max="10" value="4" step="0.5" />
+      <span class="ctrl-val" id="v-loc">4mm</span>
+    </div>
+    <div class="ctrl-row">
+      <label>ID Size</label>
+      <input type="range" id="s-id" min="2" max="8" value="3.2" step="0.5" />
+      <span class="ctrl-val" id="v-id">3.2mm</span>
     </div>
   </div>
 
@@ -113,20 +162,64 @@
     const label = document.getElementById('label');
     const outer = document.getElementById('label-outer');
 
+    let heightMm = 22, qrMm = 16, nameMm = 5, locMm = 4, idMm = 3.2;
+
     function rescale() {
       const scale = outer.offsetWidth / (62 * MM);
+      label.style.width  = (62 * MM) + 'px';
+      label.style.height = (heightMm * MM) + 'px';
       label.style.transform = `scale(${scale})`;
-      label.style.width     = (62 * MM) + 'px';
-      label.style.height    = (22 * MM) + 'px';
-      outer.style.height    = (22 * MM * scale) + 'px';
+      outer.style.height = (heightMm * MM * scale) + 'px';
     }
+
+    function updatePageCss(h) {
+      let el = document.getElementById('dp');
+      if (!el) { el = document.createElement('style'); el.id = 'dp'; document.head.appendChild(el); }
+      el.textContent = `@page { size: 62mm ${h}mm; margin: 0; }`;
+    }
+
+    function wire(id, valId, unit, onChange) {
+      const s = document.getElementById(id);
+      const v = document.getElementById(valId);
+      s.addEventListener('input', () => {
+        v.textContent = s.value + unit;
+        onChange(parseFloat(s.value));
+      });
+    }
+
+    wire('s-height', 'v-height', 'mm', v => { heightMm = v; updatePageCss(v); rescale(); });
+    wire('s-qr',     'v-qr',     'mm', v => {
+      qrMm = v;
+      const img = document.getElementById('qr-img');
+      img.style.width = img.style.height = (v * MM) + 'px';
+    });
+    wire('s-name', 'v-name', 'mm', v => {
+      nameMm = v;
+      const el = document.getElementById('t-name');
+      if (el) el.style.fontSize = (v * MM) + 'px';
+    });
+    wire('s-loc', 'v-loc', 'mm', v => {
+      locMm = v;
+      const el = document.getElementById('t-loc');
+      if (el) el.style.fontSize = (v * MM) + 'px';
+    });
+    wire('s-id', 'v-id', 'mm', v => {
+      idMm = v;
+      const el = document.getElementById('t-id');
+      if (el) el.style.fontSize = (v * MM) + 'px';
+    });
+
     window.addEventListener('load', rescale);
     window.addEventListener('resize', rescale);
+
+    function imageUrl() {
+      return `/label-image/{{ item.tab | urlencode }}/{{ item.identifier | urlencode }}.png?h=${heightMm}&qr=${qrMm}&fn=${nameMm}&fl=${locMm}&fi=${idMm}`;
+    }
 
     document.getElementById('btn-print').addEventListener('click', async () => {
       if (!isMobile) {
         const a = document.createElement('a');
-        a.href = '/label-image/{{ item.tab | urlencode }}/{{ item.identifier | urlencode }}.png';
+        a.href = imageUrl();
         a.download = 'label-{{ item.identifier }}.png';
         a.click();
         return;
@@ -137,7 +230,7 @@
       document.getElementById('btn-label').textContent = 'Preparing…';
 
       try {
-        const resp = await fetch('/label-image/{{ item.tab | urlencode }}/{{ item.identifier | urlencode }}.png');
+        const resp = await fetch(imageUrl());
         const blob = await resp.blob();
         const file = new File([blob], 'label-{{ item.identifier }}.png', { type: 'image/png' });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
