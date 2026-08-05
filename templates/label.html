@@ -138,28 +138,28 @@
     <h3>Adjust Label</h3>
     <div class="ctrl-row">
       <label>Height</label>
-      <input type="range" id="s-height" min="20" max="80" value="40" step="1" />
-      <span class="ctrl-val" id="v-height">40mm</span>
+      <input type="range" id="s-height" min="20" max="80" value="30" step="1" />
+      <span class="ctrl-val" id="v-height">30mm</span>
     </div>
     <div class="ctrl-row">
       <label>QR Size</label>
-      <input type="range" id="s-qr" min="10" max="55" value="28" step="1" />
-      <span class="ctrl-val" id="v-qr">28mm</span>
+      <input type="range" id="s-qr" min="10" max="55" value="22" step="1" />
+      <span class="ctrl-val" id="v-qr">22mm</span>
     </div>
     <div class="ctrl-row">
       <label>Name Size</label>
-      <input type="range" id="s-name" min="2" max="10" value="5" step="0.5" />
-      <span class="ctrl-val" id="v-name">5mm</span>
+      <input type="range" id="s-name" min="2" max="12" value="7" step="0.5" />
+      <span class="ctrl-val" id="v-name">7mm</span>
     </div>
     <div class="ctrl-row">
       <label>Location Size</label>
-      <input type="range" id="s-loc" min="2" max="8" value="4" step="0.5" />
-      <span class="ctrl-val" id="v-loc">4mm</span>
+      <input type="range" id="s-loc" min="2" max="10" value="5.5" step="0.5" />
+      <span class="ctrl-val" id="v-loc">5.5mm</span>
     </div>
     <div class="ctrl-row">
       <label>ID Size</label>
-      <input type="range" id="s-id" min="2" max="7" value="3.5" step="0.5" />
-      <span class="ctrl-val" id="v-id">3.5mm</span>
+      <input type="range" id="s-id" min="2" max="8" value="4" step="0.5" />
+      <span class="ctrl-val" id="v-id">4mm</span>
     </div>
   </div>
 
@@ -175,7 +175,7 @@
     if (!isMobile) document.getElementById('btn-label').textContent = 'Open in Preview';
 
     // Slider state (mm values for PNG generation)
-    let heightMm = 40, qrMm = 28;
+    let heightMm = 30, qrMm = 22, nameMm = 7, locMm = 5.5, idMm = 4;
 
     const label = document.getElementById('label');
     const outer = document.getElementById('label-outer');
@@ -221,19 +221,33 @@
       img.style.width = img.style.height = (v * MM) + 'px';
     });
     wire('s-name', 'v-name', null, 'mm', v => {
+      nameMm = v;
       const el = document.getElementById('t-name');
       if (el) el.style.fontSize = (v * MM) + 'px';
     });
     wire('s-loc', 'v-loc', null, 'mm', v => {
+      locMm = v;
       const el = document.getElementById('t-loc');
       if (el) el.style.fontSize = (v * MM) + 'px';
     });
     wire('s-id', 'v-id', null, 'mm', v => {
+      idMm = v;
       const el = document.getElementById('t-id');
       if (el) el.style.fontSize = (v * MM) + 'px';
     });
 
-    window.addEventListener('load', rescale);
+    window.addEventListener('load', () => {
+      // Apply initial font sizes to preview
+      const tname = document.getElementById('t-name');
+      const tloc  = document.getElementById('t-loc');
+      const tid   = document.getElementById('t-id');
+      const qimg  = document.getElementById('qr-img');
+      if (tname) tname.style.fontSize = (nameMm * MM) + 'px';
+      if (tloc)  tloc.style.fontSize  = (locMm  * MM) + 'px';
+      if (tid)   tid.style.fontSize   = (idMm   * MM) + 'px';
+      if (qimg)  { qimg.style.width = qimg.style.height = (qrMm * MM) + 'px'; }
+      rescale();
+    });
     window.addEventListener('resize', rescale);
 
     // ── Print / Save ──
@@ -275,7 +289,7 @@
 
     function imageUrl() {
       const base = window.location.pathname.replace('/label/', '/label-image/') + '.png';
-      return `${base}?h=${heightMm}&qr=${qrMm}`;
+      return `${base}?h=${heightMm}&qr=${qrMm}&fn=${nameMm}&fl=${locMm}&fi=${idMm}`;
     }
   </script>
 

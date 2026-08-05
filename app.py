@@ -308,9 +308,22 @@ def label_image(tab, identifier):
         height_mm = 40
 
     try:
-        qr_mm = max(10, min(height_mm - 4, float(request.args.get("qr", min(height_mm - 4, 28)))))
+        qr_mm = max(10, min(height_mm - 4, float(request.args.get("qr", min(height_mm - 4, 22)))))
     except ValueError:
-        qr_mm = min(height_mm - 4, 28)
+        qr_mm = min(height_mm - 4, 22)
+
+    try:
+        font_name_mm = max(2, min(14, float(request.args.get("fn", 7))))
+    except ValueError:
+        font_name_mm = 7
+    try:
+        font_loc_mm = max(2, min(12, float(request.args.get("fl", 5.5))))
+    except ValueError:
+        font_loc_mm = 5.5
+    try:
+        font_id_mm = max(2, min(10, float(request.args.get("fi", 4))))
+    except ValueError:
+        font_id_mm = 4
 
     W = mm2px(62)
     H = mm2px(height_mm)
@@ -351,10 +364,10 @@ def label_image(tab, identifier):
 
     lines = []
     if f.get("part_name"):
-        lines.append((f["part_name"], best_font(4.5), "#000000", True))
+        lines.append((f["part_name"], best_font(font_name_mm), "#000000", True))
     if f.get("location_code"):
-        lines.append((f["location_code"], best_font(3.8), "#000000", False))
-    lines.append((identifier, best_font(3.2), "#444444", False))
+        lines.append((f["location_code"], best_font(font_loc_mm), "#000000", False))
+    lines.append((identifier, best_font(font_id_mm), "#444444", False))
 
     # Stack lines vertically centred
     line_heights = []
