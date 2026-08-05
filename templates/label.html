@@ -7,8 +7,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── Print page size (updated by JS) ── */
-    @page { size: 62mm 40mm; margin: 0; }
+    @page { size: 62mm 22mm; margin: 0; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
@@ -16,11 +15,10 @@
       print-color-adjust: exact;
     }
 
-    /* ── The actual label — always 62mm wide, height in mm ── */
     .label {
       width: 62mm;
-      height: 40mm;           /* overridden by JS */
-      padding: 2mm;
+      height: 22mm;
+      padding: 1.5mm 2mm;
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -31,76 +29,44 @@
     }
 
     .qr-wrap { flex-shrink: 0; }
-    .qr-wrap img {
-      width: 28mm;            /* overridden by JS */
-      height: 28mm;
-      display: block;
-    }
+    .qr-wrap img { width: 18mm; height: 18mm; display: block; }
 
     .label-text {
       flex: 1;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      gap: 1mm;
+      gap: 0.8mm;
       min-width: 0;
     }
-    .label-name     { font-size: 5mm;   font-weight: 800; color: #000; line-height: 1.2; word-break: break-word; }
-    .label-location { font-size: 4mm;   font-weight: 700; color: #000; }
-    .label-id       { font-size: 3.5mm; font-style: italic; color: #444; }
+    .label-name     { font-size: 5.5mm; font-weight: 800; color: #000; line-height: 1.15; word-break: break-word; }
+    .label-location { font-size: 4.5mm; font-weight: 700; color: #000; }
+    .label-id       { font-size: 3.5mm; font-style: italic; color: #555; }
 
-    /* ── Screen layout ── */
     @media screen {
       body {
         background: #e5e7eb;
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 20px 16px;
-        gap: 16px;
+        padding: 24px 16px;
+        gap: 20px;
         min-height: 100vh;
       }
-
-      /* Wrapper scales the 62mm label up to fill screen width */
       .label-outer {
         width: 100%;
         max-width: 360px;
-        /* height set by JS based on scale */
         position: relative;
         border: 1px solid #d1d5db;
-        border-radius: 8px;
+        border-radius: 10px;
         overflow: hidden;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+        box-shadow: 0 2px 14px rgba(0,0,0,0.13);
       }
-      .label {
-        position: absolute;
-        top: 0; left: 0;
-        /* transform: scale(factor) set by JS */
-      }
+      .label { position: absolute; top: 0; left: 0; }
 
-      .controls {
-        background: #fff;
-        border: 1px solid #d1d5db;
-        border-radius: 12px;
-        padding: 16px;
-        width: 100%;
-        max-width: 360px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-      .controls h3 {
-        font-size: 13px; font-weight: 700; color: #6b7280;
-        text-transform: uppercase; letter-spacing: 0.5px;
-      }
-      .ctrl-row { display: flex; align-items: center; gap: 10px; }
-      .ctrl-row label { font-size: 14px; color: #374151; width: 100px; flex-shrink: 0; }
-      .ctrl-row input[type=range] { flex: 1; accent-color: #1F5C99; }
-      .ctrl-val { font-size: 13px; color: #6b7280; width: 40px; text-align: right; flex-shrink: 0; }
-
-      .print-bar { display: flex; gap: 10px; width: 100%; max-width: 360px; }
+      .print-bar { display: flex; gap: 12px; width: 100%; max-width: 360px; }
       .btn {
-        padding: 14px 0; border-radius: 12px; font-size: 16px;
+        padding: 15px 0; border-radius: 12px; font-size: 17px;
         font-weight: 700; cursor: pointer; border: none;
         font-family: inherit; flex: 1; text-align: center;
         text-decoration: none; display: flex; align-items: center; justify-content: center;
@@ -110,8 +76,8 @@
     }
 
     @media print {
-      .controls, .print-bar, .label-outer { box-shadow: none; border: none; border-radius: 0; }
-      .label-outer { position: static; overflow: visible; }
+      .print-bar { display: none !important; }
+      .label-outer { border: none; border-radius: 0; box-shadow: none; }
       .label { position: static; transform: none !important; }
       body { background: #fff; padding: 0; }
     }
@@ -122,44 +88,13 @@
   <div class="label-outer" id="label-outer">
     <div class="label" id="label">
       <div class="qr-wrap">
-        <img id="qr-img"
-             src="/qr/{{ item.tab | urlencode }}/{{ item.identifier | urlencode }}.png"
-             alt="QR" />
+        <img src="/qr/{{ item.tab | urlencode }}/{{ item.identifier | urlencode }}.png" alt="QR" />
       </div>
       <div class="label-text">
-        {% if f.part_name %}<div class="label-name" id="t-name">{{ f.part_name }}</div>{% endif %}
-        {% if f.location_code %}<div class="label-location" id="t-loc">{{ f.location_code }}</div>{% endif %}
-        <div class="label-id" id="t-id">{{ item.identifier }}</div>
+        {% if f.part_name %}<div class="label-name">{{ f.part_name }}</div>{% endif %}
+        {% if f.location_code %}<div class="label-location">{{ f.location_code }}</div>{% endif %}
+        <div class="label-id">{{ item.identifier }}</div>
       </div>
-    </div>
-  </div>
-
-  <div class="controls">
-    <h3>Adjust Label</h3>
-    <div class="ctrl-row">
-      <label>Height</label>
-      <input type="range" id="s-height" min="20" max="80" value="30" step="1" />
-      <span class="ctrl-val" id="v-height">30mm</span>
-    </div>
-    <div class="ctrl-row">
-      <label>QR Size</label>
-      <input type="range" id="s-qr" min="10" max="55" value="22" step="1" />
-      <span class="ctrl-val" id="v-qr">22mm</span>
-    </div>
-    <div class="ctrl-row">
-      <label>Name Size</label>
-      <input type="range" id="s-name" min="2" max="12" value="7" step="0.5" />
-      <span class="ctrl-val" id="v-name">7mm</span>
-    </div>
-    <div class="ctrl-row">
-      <label>Location Size</label>
-      <input type="range" id="s-loc" min="2" max="10" value="5.5" step="0.5" />
-      <span class="ctrl-val" id="v-loc">5.5mm</span>
-    </div>
-    <div class="ctrl-row">
-      <label>ID Size</label>
-      <input type="range" id="s-id" min="2" max="8" value="4" step="0.5" />
-      <span class="ctrl-val" id="v-id">4mm</span>
     </div>
   </div>
 
@@ -174,88 +109,24 @@
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (!isMobile) document.getElementById('btn-label').textContent = 'Open in Preview';
 
-    // Slider state (mm values for PNG generation)
-    let heightMm = 30, qrMm = 22, nameMm = 7, locMm = 5.5, idMm = 4;
-
+    const MM    = 96 / 25.4;
     const label = document.getElementById('label');
     const outer = document.getElementById('label-outer');
 
-    // 1mm in CSS pixels (at 96dpi: 1mm = 3.7795px)
-    const MM = 96 / 25.4;
-
     function rescale() {
-      const outerW = outer.offsetWidth;
-      const labelW = 62 * MM;           // 62mm in px
-      const labelH = heightMm * MM;
-      const scale  = outerW / labelW;
-
+      const scale = outer.offsetWidth / (62 * MM);
       label.style.transform = `scale(${scale})`;
-      label.style.width     = `${labelW}px`;
-      label.style.height    = `${labelH}px`;
-      outer.style.height    = `${labelH * scale}px`;
+      label.style.width     = (62 * MM) + 'px';
+      label.style.height    = (22 * MM) + 'px';
+      outer.style.height    = (22 * MM * scale) + 'px';
     }
-
-    function updatePageCss(h) {
-      let el = document.getElementById('dp');
-      if (!el) { el = document.createElement('style'); el.id = 'dp'; document.head.appendChild(el); }
-      el.textContent = `@page { size: 62mm ${h}mm; margin: 0; }`;
-    }
-
-    function wire(id, valId, prop, unit, onChange) {
-      const s = document.getElementById(id);
-      const v = document.getElementById(valId);
-      s.addEventListener('input', () => {
-        v.textContent = s.value + unit;
-        if (onChange) onChange(parseFloat(s.value));
-      });
-    }
-
-    wire('s-height', 'v-height', null, 'mm', v => {
-      heightMm = v;
-      updatePageCss(v);
-      rescale();
-    });
-    wire('s-qr', 'v-qr', null, 'mm', v => {
-      qrMm = v;
-      const img = document.getElementById('qr-img');
-      img.style.width = img.style.height = (v * MM) + 'px';
-    });
-    wire('s-name', 'v-name', null, 'mm', v => {
-      nameMm = v;
-      const el = document.getElementById('t-name');
-      if (el) el.style.fontSize = (v * MM) + 'px';
-    });
-    wire('s-loc', 'v-loc', null, 'mm', v => {
-      locMm = v;
-      const el = document.getElementById('t-loc');
-      if (el) el.style.fontSize = (v * MM) + 'px';
-    });
-    wire('s-id', 'v-id', null, 'mm', v => {
-      idMm = v;
-      const el = document.getElementById('t-id');
-      if (el) el.style.fontSize = (v * MM) + 'px';
-    });
-
-    window.addEventListener('load', () => {
-      // Apply initial font sizes to preview
-      const tname = document.getElementById('t-name');
-      const tloc  = document.getElementById('t-loc');
-      const tid   = document.getElementById('t-id');
-      const qimg  = document.getElementById('qr-img');
-      if (tname) tname.style.fontSize = (nameMm * MM) + 'px';
-      if (tloc)  tloc.style.fontSize  = (locMm  * MM) + 'px';
-      if (tid)   tid.style.fontSize   = (idMm   * MM) + 'px';
-      if (qimg)  { qimg.style.width = qimg.style.height = (qrMm * MM) + 'px'; }
-      rescale();
-    });
+    window.addEventListener('load', rescale);
     window.addEventListener('resize', rescale);
 
-    // ── Print / Save ──
     document.getElementById('btn-print').addEventListener('click', async () => {
       if (!isMobile) {
-        // Download PNG — macOS opens it in Preview automatically
         const a = document.createElement('a');
-        a.href = imageUrl();
+        a.href = '/label-image/{{ item.tab | urlencode }}/{{ item.identifier | urlencode }}.png';
         a.download = 'label-{{ item.identifier }}.png';
         a.click();
         return;
@@ -266,11 +137,9 @@
       document.getElementById('btn-label').textContent = 'Preparing…';
 
       try {
-        const url  = imageUrl();
-        const resp = await fetch(url);
+        const resp = await fetch('/label-image/{{ item.tab | urlencode }}/{{ item.identifier | urlencode }}.png');
         const blob = await resp.blob();
         const file = new File([blob], 'label-{{ item.identifier }}.png', { type: 'image/png' });
-
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file], title: 'Label {{ item.identifier }}' });
         } else {
@@ -286,11 +155,6 @@
         document.getElementById('btn-label').textContent = 'Save to Photos';
       }
     });
-
-    function imageUrl() {
-      const base = window.location.pathname.replace('/label/', '/label-image/') + '.png';
-      return `${base}?h=${heightMm}&qr=${qrMm}&fn=${nameMm}&fl=${locMm}&fi=${idMm}`;
-    }
   </script>
 
 </body>
