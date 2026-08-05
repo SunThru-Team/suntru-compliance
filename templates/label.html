@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Label — {{ item.identifier }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @page {
+      size: 62mm auto;
+      margin: 0;
+    }
+
+    html, body {
+      width: 62mm;
+      background: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .label {
+      width: 62mm;
+      padding: 3mm 3mm 4mm;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2mm;
+    }
+
+    /* ── QR code ── */
+    .qr-wrap {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+    .qr-wrap img {
+      width: 50mm;
+      height: 50mm;
+      display: block;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      width: 100%;
+      border: none;
+      border-top: 0.3mm solid #ccc;
+      margin: 1mm 0;
+    }
+
+    /* ── Text block ── */
+    .label-name {
+      font-size: 5mm;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: -0.2px;
+      color: #000;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+    .label-location {
+      font-size: 4.2mm;
+      font-weight: 700;
+      text-align: center;
+      color: #000;
+      letter-spacing: 0.3px;
+    }
+    .label-id {
+      font-size: 3.8mm;
+      font-style: italic;
+      text-align: center;
+      color: #444;
+    }
+
+    /* ── Screen-only UI ── */
+    @media screen {
+      body {
+        background: #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        min-height: 100vh;
+        padding: 20px;
+        gap: 16px;
+      }
+      .label {
+        background: #fff;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+      }
+      .print-bar {
+        display: flex;
+        gap: 10px;
+      }
+      .btn {
+        padding: 12px 28px;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+        font-family: inherit;
+      }
+      .btn-print {
+        background: #1F5C99;
+        color: #fff;
+      }
+      .btn-back {
+        background: #e5e7eb;
+        color: #374151;
+      }
+    }
+
+    @media print {
+      .print-bar { display: none; }
+      body { background: #fff; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="label">
+    <div class="qr-wrap">
+      <img src="/qr/{{ item.tab | urlencode }}/{{ item.identifier | urlencode }}.png"
+           alt="QR code" />
+    </div>
+
+    <hr class="divider" />
+
+    {% if f.part_name %}
+    <div class="label-name">{{ f.part_name }}</div>
+    {% endif %}
+
+    {% if f.location_code %}
+    <div class="label-location">{{ f.location_code }}</div>
+    {% endif %}
+
+    <div class="label-id">{{ item.identifier }}</div>
+  </div>
+
+  <div class="print-bar">
+    <button class="btn btn-print" onclick="window.print()">Print Label</button>
+    <button class="btn btn-back" onclick="history.back()">Back</button>
+  </div>
+
+  <script>
+    // Auto-open print dialog on mobile
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      window.addEventListener("load", () => setTimeout(() => window.print(), 400));
+    }
+  </script>
+
+</body>
+</html>

@@ -276,6 +276,16 @@ def item_page():
         all_tabs=get_all_tabs(), tab_meta=get_tab_meta())
 
 
+@app.route("/label/<tab>/<identifier>")
+def label_page(tab, identifier):
+    item = find_item(identifier, tab)
+    if item is None:
+        abort(404)
+    data    = get_tab_items(tab)
+    col_map = data["col_map"]
+    return render_template("label.html", item=item, f=item["fields"], col_map=col_map)
+
+
 @app.route("/add")
 def add_page():
     all_tabs   = get_all_tabs()
