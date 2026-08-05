@@ -223,12 +223,16 @@
   </div>
 
   <div class="print-bar">
-    <button class="btn btn-print" onclick="window.print()">Print Label</button>
+    <button class="btn btn-print" id="btn-print">Print Label</button>
     <button class="btn btn-back"  onclick="history.back()">Back</button>
   </div>
 
   <script>
-    const root = document.documentElement;
+    const root   = document.documentElement;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    // Current slider values
+    let heightMm = 40, qrMm = 28;
 
     function wire(sliderId, valId, cssVar, unit) {
       const slider = document.getElementById(sliderId);
@@ -237,8 +241,8 @@
         const v = slider.value + unit;
         root.style.setProperty(cssVar, v);
         val.textContent = v;
-        // also update @page size dynamically via a style element
-        if (cssVar === '--label-height') updatePageSize(slider.value);
+        if (cssVar === '--label-height') { heightMm = parseFloat(slider.value); updatePageSize(slider.value); }
+        if (cssVar === '--qr-size')       qrMm = parseFloat(slider.value);
       });
     }
 
@@ -254,9 +258,19 @@
     wire('s-loc',    'v-loc',    '--font-loc',      'mm');
     wire('s-id',     'v-id',     '--font-id',       'mm');
 
-    // Auto-open print dialog on mobile
-    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-      window.addEventListener('load', () => setTimeout(() => window.print(), 400));
+    document.getElementById('btn-print').addEventListener('click', () => {
+      if (isMobile) {
+        // Open generated PNG — AirPrint from Photos respects exact dimensions
+        const url = imageUrl();
+        window.open(url, '_blank');
+      } else {
+        window.print();
+      }
+    });
+
+    function imageUrl() {
+      const base = window.location.pathname.replace('/label/', '/label-image/') + '.png';
+      return `${base}?h=${heightMm}&qr=${qrMm}`;
     }
   </script>
 

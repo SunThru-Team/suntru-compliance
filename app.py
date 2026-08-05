@@ -286,6 +286,109 @@ def label_page(tab, identifier):
     return render_template("label.html", item=item, f=item["fields"], col_map=col_map)
 
 
+@app.route("/label-image/<tab>/<path:identifier>.png")
+def label_image(tab, identifier):
+    """Generate a 300 DPI PNG of the label at exactly 62mm × height_mm."""
+    from PIL import Image, ImageDraw, ImageFont
+
+    item = find_item(identifier, tab)
+    if item is None:
+        abort(404)
+
+    f           = item["fields"]
+    DPI         = 300
+    MM_PER_INCH = 25.4
+
+    def mm2px(mm):
+        return int(round(mm / MM_PER_INCH * DPI))
+
+    try:
+        height_mm = max(15, min(120, float(request.args.get("h", 40))))
+    except ValueError:
+        height_mm = 40
+
+    try:
+        qr_mm = max(10, min(height_mm - 4, float(request.args.get("qr", min(height_mm - 4, 28)))))
+    except ValueError:
+        qr_mm = min(height_mm - 4, 28)
+
+    W = mm2px(62)
+    H = mm2px(height_mm)
+
+    # Generate QR
+    base_url   = request.host_url.rstrip("/")
+    target_url = f"{base_url}/item?id={identifier}&tab={tab}"
+    qr_obj = qrcode.QRCode(version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=10, border=2)
+    qr_obj.add_data(target_url)
+    qr_obj.make(fit=True)
+    qr_img = qr_obj.make_image(fill_color="black", back_color="white").convert("RGB")
+    qr_px  = mm2px(qr_mm)
+    qr_img = qr_img.resize((qr_px, qr_px), Image.LANCZOS)
+
+    img  = Image.new("RGB", (W, H), "white")
+    draw = ImageDraw.Draw(img)
+
+    pad = mm2px(2)
+    # Place QR centred vertically on left
+    qr_y = (H - qr_px) // 2
+    img.paste(qr_img, (pad, qr_y))
+
+    # Text area
+    text_x  = pad + qr_px + mm2px(2)
+    text_w  = W - text_x - pad
+
+    def best_font(size_mm):
+        size_pt = int(size_mm / MM_PER_INCH * DPI * 0.75)
+        try:
+            return ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", size_pt)
+        except Exception:
+            try:
+                return ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", size_pt)
+            except Exception:
+                return ImageFont.load_default()
+
+    lines = []
+    if f.get("part_name"):
+        lines.append((f["part_name"], best_font(4.5), "#000000", True))
+    if f.get("location_code"):
+        lines.append((f["location_code"], best_font(3.8), "#000000", False))
+    lines.append((identifier, best_font(3.2), "#444444", False))
+
+    # Stack lines vertically centred
+    line_heights = []
+    for text, font, _, _ in lines:
+        bb = draw.textbbox((0, 0), text, font=font)
+        line_heights.append(bb[3] - bb[1])
+
+    gap       = mm2px(1.5)
+    total_h   = sum(line_heights) + gap * (len(lines) - 1)
+    current_y = (H - total_h) // 2
+
+    for i, (text, font, color, bold) in enumerate(lines):
+        bb = draw.textbbox((0, 0), text, font=font)
+        tw = bb[2] - bb[0]
+        # Shrink text to fit if too wide
+        if tw > text_w:
+            ratio     = text_w / tw
+            shrunk_pt = max(8, int(font.size * ratio))
+            try:
+                font = font.font_variant(size=shrunk_pt)
+            except Exception:
+                pass
+            bb = draw.textbbox((0, 0), text, font=font)
+            tw = bb[2] - bb[0]
+        draw.text((text_x, current_y - bb[1]), text, fill=color, font=font)
+        current_y += line_heights[i] + gap
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG", dpi=(DPI, DPI))
+    buf.seek(0)
+    return send_file(buf, mimetype="image/png",
+                     download_name=f"label-{identifier}.png")
+
+
 @app.route("/add")
 def add_page():
     all_tabs   = get_all_tabs()
