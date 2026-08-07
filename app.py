@@ -360,36 +360,48 @@ def label_image(tab, identifier):
         except TypeError:
             return ImageFont.load_default()
 
-    lines = []
-    if f.get("part_name"):
-        lines.append((f["part_name"], best_font(font_name_mm), "#000000", True))
-    if f.get("location_code"):
-        lines.append((f["location_code"], best_font(font_loc_mm), "#000000", False))
-    lines.append((identifier, best_font(font_id_mm), "#444444", False))
+    def wrap_text(text, font, max_width):
+        """Split text into lines that fit within max_width pixels."""
+        words = text.split()
+        wrapped = []
+        current = ""
+        for word in words:
+            test = (current + " " + word).strip()
+            bb = draw.textbbox((0, 0), test, font=font)
+            if bb[2] - bb[0] <= max_width:
+                current = test
+            else:
+                if current:
+                    wrapped.append(current)
+                current = word
+        if current:
+            wrapped.append(current)
+        return wrapped if wrapped else [text]
 
-    # Stack lines vertically centred
+    # Build render list: (text_line, font, color)
+    render_lines = []
+    if f.get("part_name"):
+        font_name = best_font(font_name_mm)
+        for ln in wrap_text(f["part_name"], font_name, text_w):
+            render_lines.append((ln, font_name, "#000000"))
+    if f.get("location_code"):
+        font_loc = best_font(font_loc_mm)
+        for ln in wrap_text(f["location_code"], font_loc, text_w):
+            render_lines.append((ln, font_loc, "#000000"))
+    font_id = best_font(font_id_mm)
+    render_lines.append((identifier, font_id, "#666666"))
+
+    gap = mm2px(1)
     line_heights = []
-    for text, font, _, _ in lines:
+    for text, font, _ in render_lines:
         bb = draw.textbbox((0, 0), text, font=font)
         line_heights.append(bb[3] - bb[1])
 
-    gap       = mm2px(1.5)
-    total_h   = sum(line_heights) + gap * (len(lines) - 1)
+    total_h   = sum(line_heights) + gap * (len(render_lines) - 1)
     current_y = (H - total_h) // 2
 
-    for i, (text, font, color, bold) in enumerate(lines):
+    for i, (text, font, color) in enumerate(render_lines):
         bb = draw.textbbox((0, 0), text, font=font)
-        tw = bb[2] - bb[0]
-        # Shrink text to fit if too wide
-        if tw > text_w:
-            ratio     = text_w / tw
-            shrunk_pt = max(8, int(font.size * ratio))
-            try:
-                font = font.font_variant(size=shrunk_pt)
-            except Exception:
-                pass
-            bb = draw.textbbox((0, 0), text, font=font)
-            tw = bb[2] - bb[0]
         draw.text((text_x, current_y - bb[1]), text, fill=color, font=font)
         current_y += line_heights[i] + gap
 
